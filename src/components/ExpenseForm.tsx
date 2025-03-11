@@ -1,46 +1,54 @@
-import React, { useState, useContext } from "react";
-import { ExpenseContext } from "../context/ExpenseContext";
-import { v4 as uuidv4 } from "uuid";
-import { Button, Input, DatePicker, Select } from "antd";
+import React from "react";
+import { Form, Input, InputNumber, Button, Select, DatePicker, message } from "antd";
+import { Expense } from "../App";
+import { getCategories } from "../utils/categories";
 
-const { Option } = Select;
+interface ExpenseFormProps {
+  addExpense: (expense: Expense) => void;
+}
 
-const ExpenseForm = () => {
-   const expenseContext = useContext(ExpenseContext);
-   if (!expenseContext) return null;
-   const { addExpense } = expenseContext;
+const ExpenseForm: React.FC<ExpenseFormProps> = ({ addExpense }) => {
+  const [form] = Form.useForm();
 
-   const [amount, setAmount] = useState(0);
-   const [date, setDate] = useState<string | null>(null);
-   const [description, setDescription] = useState("");
-   const [category, setCategory] = useState("");
+  const handleSubmit = (values: any) => {
+    const newExpense: Expense = {
+      id: Date.now(),
+      amount: values.amount,
+      date: values.date.format("YYYY-MM-DD"),
+      description: values.description,
+      category: values.category,
+      paid: false,
+    };
+    addExpense(newExpense);
+    form.resetFields();
+  };
 
-   const handleSubmit = () => {
-       if (amount && date && description && category) {
-           addExpense({
-               id: uuidv4(),
-               amount,
-               date,
-               description,
-               category,
-               paid: false,
-           });
-       }
-   };
-
-   return (
-       <div>
-           <Input type="number" placeholder="Amount" onChange={(e) => setAmount(Number(e.target.value))} />
-           <DatePicker onChange={(date, dateString) => setDate(dateString as string)} />
-           <Input placeholder="Description" onChange={(e) => setDescription(e.target.value)} />
-           <Select placeholder="Category" onChange={(value) => setCategory(value)}>
-               <Option value="Food">Food</Option>
-               <Option value="Transport">Transport</Option>
-               <Option value="Entertainment">Entertainment</Option>
-           </Select>
-           <Button type="primary" onClick={handleSubmit}>Add Expense</Button>
-       </div>
-   );
+  return (
+    <div>
+      <h3>Add New Expense</h3>
+      <Form form={form} onFinish={handleSubmit} layout="vertical">
+        <Form.Item name="amount" label="Amount" rules={[{ required: true, message: "Enter amount" }]}>
+          <InputNumber style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item name="date" label="Date" rules={[{ required: true, message: "Select date" }]}>
+          <DatePicker style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item name="description" label="Description">
+          <Input placeholder="Optional" />
+        </Form.Item>
+        <Form.Item name="category" label="Category" rules={[{ required: true, message: "Select category" }]}>
+          <Select placeholder="Select category">
+            {getCategories().map(cat => (
+              <Select.Option key={cat} value={cat}>{cat}</Select.Option>
+            ))}
+          </Select>
+        </Form.Item>
+        <Form.Item>
+          <Button type="primary" htmlType="submit">Add Expense</Button>
+        </Form.Item>
+      </Form>
+    </div>
+  );
 };
 
 export default ExpenseForm;

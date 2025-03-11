@@ -1,16 +1,23 @@
 import React from "react";
-import { Card, Progress } from "antd";
+import { Card, Statistic, Progress } from "antd";
+import { Expense } from "../App";
 
-const ExpenseSummary: React.FC = () => {
-  const totalSpent = 5000;
-  const budget = 10000;
-  const progress = (totalSpent / budget) * 100;
+interface ExpenseSummaryProps {
+  expenses: Expense[];
+}
+
+const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ expenses }) => {
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+
+  // Dummy budget value for now, can be dynamic later
+  const monthlyBudget = 20000; 
+  const budgetUsage = (totalExpenses / monthlyBudget) * 100;
 
   return (
-    <Card title="Expense Summary">
-      <p>Total Spent: ₹{totalSpent}</p>
-      <p>Budget: ₹{budget}</p>
-      <Progress percent={progress} status={progress > 80 ? "exception" : "active"} />
+    <Card title="Expense Summary" style={{ marginBottom: 20 }}>
+      <Statistic title="Total Expenses" value={totalExpenses} prefix="₹" />
+      <p style={{ marginTop: 10 }}>Budget Usage:</p>
+      <Progress percent={Math.min(budgetUsage, 100)} status={budgetUsage > 100 ? "exception" : "active"} />
     </Card>
   );
 };

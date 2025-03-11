@@ -1,41 +1,79 @@
-import React, { createContext, useState, useEffect } from "react";
-import { getExpenses, saveExpenses } from "../utils/storage";
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export interface Expense {
-    id: string;
-    amount: number;
-    date: string;
-    description: string;
-    category: string;
-    paid: boolean;
+interface Category {
+  id: string;
+  name: string;
+}
+
+interface Expense {
+  id: string;
+  amount: number;
+  date: string;
+  description: string;
+  categoryId: string;
+  paymentMethod: string;
+  status: 'Paid' | 'Unpaid';
 }
 
 interface ExpenseContextType {
-    expenses: Expense[];
-    addExpense: (expense: Expense) => void;
-    removeExpense: (id: string) => void;
-    updateExpense: (updatedExpense: Expense) => void;
+  expenses: Expense[];
+  categories: Category[];
+  addExpense: (expense: Expense) => void;
+  editExpense: (id: string, updatedExpense: Expense) => void;
+  deleteExpense: (id: string) => void;
+  addCategory: (category: Category) => void;
+  deleteCategory: (id: string) => void;
 }
 
-export const ExpenseContext = createContext<ExpenseContextType | null>(null);
+const ExpenseContext = createContext<ExpenseContextType | undefined>(undefined);
 
 export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [expenses, setExpenses] = useState<Expense[]>(getExpenses());
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
-    useEffect(() => {
-        saveExpenses(expenses);
-    }, [expenses]);
+  useEffect(() => {
+    const storedExpenses = localStorage.getItem('expenses');
+    const storedCategories = localStorage.getItem('categories');
+    if (storedExpenses) setExpenses(JSON.parse(storedExpenses));
+    if (storedCategories) setCategories(JSON.parse(storedCategories));
+  }, []);
 
-    const addExpense = (expense: Expense) => setExpenses([...expenses, expense]);
+  useEffect(() => {
+    localStorage.setItem('expenses', JSON.stringify(expenses));
+    localStorage.setItem('categories', JSON.stringify(categories));
+  }, [expenses, categories]);
 
-    const removeExpense = (id: string) => setExpenses(expenses.filter(exp => exp.id !== id));
+  const addExpense = (expense: Expense) => {
+    setExpenses([...expenses, expense]);
+  };
 
-    const updateExpense = (updatedExpense: Expense) =>
-        setExpenses(expenses.map(exp => (exp.id === updatedExpense.id ? updatedExpense : exp)));
+  const editExpense = (id: string, updatedExpense: Expense) => {
+    setExpenses(expenses.map(exp => (exp.id === id ? updatedExpense : exp)));
+  };
 
-    return (
-        <ExpenseContext.Provider value={{ expenses, addExpense, removeExpense, updateExpense }}>
-            {children}
-        </ExpenseContext.Provider>
-    );
+  const deleteExpense = (id: string) => {
+    setExpenses(expenses.filter(exp => exp.id !== id));
+  };
+
+  const addCategory = (category: Category) => {
+    setCategories([...categories, category]);
+  };
+
+  const deleteCategory = (id: string) => {
+    setCategories(categories.filter(cat => cat.id !== id));
+  };
+
+  return (
+    <ExpenseContext.Provider value={{ expenses, categories, addExpense, editExpense, deleteExpense, addCategory, deleteCategory }}>
+      {children}
+    </ExpenseContext.Provider>
+  );
+};
+
+export const useExpenseContext = () => {
+  const context = useContext(ExpenseContext);
+  if (!context) {
+    throw new Error("useExpenseContext must be used within an ExpenseProvider");
+  }
+  return context;
 };
