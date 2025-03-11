@@ -1,55 +1,35 @@
-export {}; // ✅ Fix for --isolatedModules issue
-
-import React from "react";
-import { Layout, Row, Col, Card } from "antd";
+import React, { useState, useEffect } from "react";
+import ExpenseSummary from "./ExpenseSummary";
 import ExpenseForm from "./ExpenseForm";
 import ExpenseList from "./ExpenseList";
-import ExpenseFilter from "./ExpenseFilter";
-import ExpenseSummary from "./ExpenseSummary";
-import RecurringExpenses from "./RecurringExpenses";
-
-
-const { Header, Content } = Layout;
+import { Expense } from "../App";
 
 const Dashboard: React.FC = () => {
+  const [expenses, setExpenses] = useState<Expense[]>(() => {
+    const storedExpenses = localStorage.getItem("expenses");
+    return storedExpenses ? JSON.parse(storedExpenses) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("expenses", JSON.stringify(expenses));
+  }, [expenses]);
+
+  const addExpense = (expense: Expense) => {
+    const updatedExpenses = [...expenses, expense];
+    setExpenses(updatedExpenses);
+  };
+
+  const removeExpense = (id: number) => {
+    const updatedExpenses = expenses.filter(expense => expense.id !== id);
+    setExpenses(updatedExpenses);
+  };
+
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      <Header style={{ color: "#fff", fontSize: "24px", textAlign: "center" }}>
-        Expense Tracker
-      </Header>
-      
-      <Content style={{ padding: "20px" }}>
-        <Row gutter={[16, 16]}>
-          <Col span={24}>
-            <ExpenseSummary />
-          </Col>
-
-          <Col span={24}>
-            <Card title="Filter Expenses">
-              <ExpenseFilter />
-            </Card>
-          </Col>
-
-          <Col span={12}>
-            <Card title="Add New Expense">
-              <ExpenseForm />
-            </Card>
-          </Col>
-          
-          <Col span={12}>
-            <Card title="Recurring Expenses">
-              <RecurringExpenses />
-            </Card>
-          </Col>
-
-          <Col span={24}>
-            <Card title="Expense History">
-              <ExpenseList />
-            </Card>
-          </Col>
-        </Row>
-      </Content>
-    </Layout>
+    <div>
+      <ExpenseSummary expenses={expenses} />
+      <ExpenseForm addExpense={addExpense} />
+      <ExpenseList expenses={expenses} setExpenses={setExpenses} removeExpense={removeExpense} />
+    </div>
   );
 };
 
